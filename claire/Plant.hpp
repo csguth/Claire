@@ -8,11 +8,17 @@
 #ifndef Plant_hpp
 #define Plant_hpp
 
+#include <Integer.hpp>
 #include <string>
 #include <ostream>
 
 namespace claire
 {
+    enum class PlantProperty
+    {
+        Moisture
+    };
+    
     struct Plant
     {
         Plant() = default;
@@ -33,6 +39,7 @@ namespace claire
         double moisture_{0.0};
         
     };
+    
 }
 
 #endif /* Plant_hpp */

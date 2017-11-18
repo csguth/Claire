@@ -34,7 +34,7 @@ namespace claire
     }
     Plant::operator std::string() const
     {
-        return "\"Plant\" name=\""+name_+"\"";
+        return "\"Plant\" name=\""+name()+"\" moisture=\"" + std::to_string(moisture())  + "\"";
     }
     std::ostream& operator<<(std::ostream& out, const Plant& p)
     {
