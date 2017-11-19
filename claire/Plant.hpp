@@ -29,6 +29,7 @@ namespace claire
         explicit Plant(std::string name);
         std::string name() const;
         bool operator==(const Plant&) const;
+        bool operator<(const Plant&) const;
         operator std::string() const;
         double moisture() const;
         Plant moisture(double value) const;

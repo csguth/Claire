@@ -8,6 +8,8 @@
 #include "Claire.hpp"
 #include <ostream>
 #include <iterator>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace claire {
     
@@ -56,14 +58,21 @@ namespace claire {
         }
         GrowBox box{*this};
         box.updatedAt_ = time;
-        box.sensors_ = std::move(box.sensors_).update(time);
         
-        if (box.sensors_.now.serial && box.sensors_.now.property == PlantProperty::Moisture)
+        auto sensors = box.sensors_;
+        
+        for (auto& sensor: sensors)
         {
-            auto value = box.sensors_.now.serial->readNext();
-            auto plant = box.plant(box.sensors_.now.plant.name()).moisture(static_cast<double>(box.sensors_.now.serial->readNext().get())/value.max());
-            box = std::move(box).put(std::move(plant));
-            box.sensors_.now.serial.reset();
+            
+            sensor.second = sensor.second.update(time);
+        
+            if (sensor.second.now.serial && sensor.second.now.property == PlantProperty::Moisture)
+            {
+                auto value = sensor.second.now.serial->readNext();
+                auto plant = box.plant(sensor.first.name()).moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max());
+                box = std::move(box).put(std::move(plant));
+//                sensor.second.now.serial.reset();
+            }
         }
         
         box.light_ = std::move(box.light_).update(time);
@@ -90,27 +99,34 @@ namespace claire {
     std::ostream& operator<<(std::ostream& out, GrowBox box)
     {
         auto timet = std::chrono::system_clock::to_time_t(std::move(box).updatedAt_);
-        out << "[\n\tGrowBox " << std::ctime(&timet);
-        out << "\t\tlight is " << (box.light_.now == LightState::On ? "ON" : "OFF") << "\n";
-        out << "\t\tplants (" << box.plants_.size() << "):\n";
+        boost::property_tree::ptree root;
+        root.put("last_updated", std::ctime(&timet));
+        root.put("light", std::string{(box.light_.now == LightState::On ? "ON" : "OFF")});
+        boost::property_tree::ptree& plants = root.add_child("plants", boost::property_tree::ptree{});
         for (auto plant: box.plants_)
         {
-            out << "\t\t\t" << std::move(plant) << "\n";
+            boost::property_tree::ptree plant_pt;
+            plant_pt.put("name", plant.name());
+            plant_pt.put("moisture", plant.moisture());
+            boost::property_tree::ptree& sensorEvents = plant_pt.add_child("sensors", boost::property_tree::ptree{});
+            for (auto event: box.sensors_.at(plant).events)
+            {
+                auto eventtimet = std::chrono::system_clock::to_time_t(event.first);
+                std::string sensortype = (std::get<0>(event.second).property == PlantProperty::Moisture ? "moisture" : "sensor");
+                sensorEvents.put(sensortype, std::ctime(&eventtimet));
+            }
+            plants.push_back(std::make_pair("", plant_pt));
         }
-        out << "\t\tscheduled sensor events(" << box.sensors_.events.size() << "): " << "\n";
-        for (auto event: box.sensors_.events)
-        {
-            auto eventtimet = std::chrono::system_clock::to_time_t(event.first);
-            out << "\t\t\t" << (std::get<0>(event.second).property == PlantProperty::Moisture ? "Moisture" : "Sensor") << " at " << std::ctime(&eventtimet);
-        }
-        out << "\t\tscheduled light events(" << box.light_.events.size() << "): " << "\n";
+        boost::property_tree::ptree& lights = root.add_child("lights", boost::property_tree::ptree{});
         for (auto event: box.light_.events)
         {
             auto eventtimet = std::chrono::system_clock::to_time_t(event.first);
-            out << "\t\t\t" << (std::get<0>(event.second) == LightState::On ? "ON" : "OFF") << " at " << std::ctime(&eventtimet);
+            boost::property_tree::ptree light_pt;
+            light_pt.put("state", (std::get<0>(event.second) == LightState::On ? "ON" : "OFF"));
+            light_pt.put("when", std::ctime(&eventtimet));
+            lights.push_back(std::make_pair("", light_pt));
         }
-       
-        out << "]";
+        boost::property_tree::write_json(out, root);
         return out;
     }
     

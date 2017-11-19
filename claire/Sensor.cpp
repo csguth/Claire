@@ -9,18 +9,17 @@
 
 namespace claire
 {
-    SerialPort::SerialPort(std::string)
+    std::unique_ptr<SerialPort> SerialPort::create(boost::asio::io_service& io, std::string path)
+    {
+        return std::unique_ptr<SerialPort>(new SerialPort{io, std::move(path)});
+    }
+    SerialPort::SerialPort(boost::asio::io_service& io, std::string path):
+        port_(io)
     {
         
     }
-    std::unique_ptr<SensorInput> SerialPort::clone() const
-    {
-        return std::make_unique<SerialPort>("dummy");
-    }
     Integer<0, 1023> SerialPort::readNext() const
     {
-        static Integer<0, 1023> curr;
-        curr = std::move(curr).set(curr.get()+1);
-        return curr;
+        return Integer<0, 1023>{666};
     }
 }

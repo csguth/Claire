@@ -11,6 +11,7 @@
 #include <memory>
 #include <Integer.hpp>
 #include <Plant.hpp>
+#include <boost/asio.hpp>
 
 namespace claire
 {
@@ -18,7 +19,6 @@ namespace claire
     {
     public:
         virtual ~SensorInput() = default;
-        virtual std::unique_ptr<SensorInput> clone() const = 0;
         virtual Integer<0, 1023> readNext() const = 0;
     private:
     };
@@ -26,16 +26,19 @@ namespace claire
     class SerialPort: public SensorInput
     {
     public:
-        explicit SerialPort(std::string path);
-        std::unique_ptr<SensorInput> clone() const override;
+        static std::unique_ptr<SerialPort> create(boost::asio::io_service& io, std::string path);
         Integer<0, 1023> readNext() const override;
     private:
-        std::string path_;
+        SerialPort() = default;
+        SerialPort(SerialPort&&) = default;
+        SerialPort& operator=(SerialPort&&) = default;
+        explicit SerialPort(boost::asio::io_service& io, std::string path);
+        
+        boost::asio::serial_port port_;
     };
     
     struct SensorEvent
     {
-        Plant plant;
         PlantProperty property;
         std::shared_ptr<SensorInput> serial;
     };

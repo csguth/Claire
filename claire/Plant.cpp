@@ -22,6 +22,10 @@ namespace claire
     {
         return name_ == other.name_;
     }
+    bool Plant::operator<(const Plant& other) const
+    {
+        return name_ < other.name_;
+    }
     double Plant::moisture() const
     {
         return moisture_;
