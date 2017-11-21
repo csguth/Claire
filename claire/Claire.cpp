@@ -11,6 +11,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+using namespace std::chrono_literals;
+using std::chrono::system_clock;
+
 namespace claire {
     
     LightState GrowBox::light() const
@@ -140,6 +143,14 @@ namespace claire {
             box.sensors_.at(plant) = std::move(box.sensors_.at(plant)).update(std::move(now));
         }
         return box;
+    }
+    
+    GrowBox Claire::photoperiod(std::chrono::seconds dayDuration, LightState initialState, GrowBox box) const
+    {
+        auto now = system_clock::now();
+        box.light_.events.clear();
+        return light(initialState, now + (initialState == LightState::On?0s:dayDuration), 24h,
+                     light((initialState==LightState::Off?LightState::On:LightState::Off), now + dayDuration, 24h, std::move(box)));
     }
     
 }

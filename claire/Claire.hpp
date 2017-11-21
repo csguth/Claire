@@ -60,6 +60,7 @@ namespace claire {
         std::optional<GrowBox> update(std::chrono::system_clock::time_point time, GrowBox box) const;
         GrowBox shutdown(std::chrono::system_clock::time_point time, GrowBox box) const;
         GrowBox sensor(std::shared_ptr<SerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const;
+        GrowBox photoperiod(std::chrono::seconds dayDuration, LightState initialState, GrowBox box) const;
     };
 }
 
