@@ -68,7 +68,7 @@ namespace claire {
         return out;
     }
     
-    GrowBox Claire::light(GrowBox box, LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat) const
+    GrowBox Claire::light(LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const
     {
         auto now = std::chrono::system_clock::now();
         box.light_.events[std::move(time)] = std::make_tuple(state, repeat);
@@ -79,12 +79,12 @@ namespace claire {
         return box;
     }
     
-    GrowBox Claire::removePlant(GrowBox box, Plant plant) const
+    GrowBox Claire::removePlant(Plant plant, GrowBox box) const
     {
         box.plants_.erase(std::remove(box.plants_.begin(), box.plants_.end(), std::move(plant)), box.plants_.end());
         return box;
     }
-    std::optional<GrowBox> Claire::update(GrowBox box, std::chrono::system_clock::time_point time) const
+    std::optional<GrowBox> Claire::update(std::chrono::system_clock::time_point time, GrowBox box) const
     {
         if (box.shutdownTime_)
         {
@@ -106,7 +106,7 @@ namespace claire {
             {
                 auto value = sensor.second.now.serial->readNext();
                 auto plant = box.plant(sensor.first.name()).moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max());
-                box = put(std::move(box), std::move(plant));
+                box = put(std::move(plant), std::move(box));
                 //                sensor.second.now.serial.reset();
             }
         }
@@ -114,14 +114,14 @@ namespace claire {
         box.light_ = std::move(box.light_).update(time);
         return box;
     }
-    GrowBox Claire::put(GrowBox box, Plant plant) const
+    GrowBox Claire::put(Plant plant, GrowBox box) const
     {
-        auto result = removePlant(std::move(box), plant);
+        auto result = removePlant(plant, std::move(box));
         result.plants_.push_back(std::move(plant));
         return result;
     }
     
-    GrowBox Claire::shutdown(GrowBox box, std::chrono::system_clock::time_point time) const
+    GrowBox Claire::shutdown(std::chrono::system_clock::time_point time, GrowBox box) const
     {
         box.shutdownTime_ = std::move(time);
         return box;

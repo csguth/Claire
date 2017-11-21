@@ -65,11 +65,11 @@ namespace claire {
     class Claire
     {
     public:
-        GrowBox light(GrowBox box, LightState state, std::chrono::system_clock::time_point time = std::chrono::system_clock::now(), std::chrono::seconds repeat = std::chrono::seconds{0}) const;
-        GrowBox put(GrowBox box, Plant plant) const;
-        GrowBox removePlant(GrowBox box, Plant plant) const;
-        std::optional<GrowBox> update(GrowBox box, std::chrono::system_clock::time_point time) const;
-        GrowBox shutdown(GrowBox box, std::chrono::system_clock::time_point time = std::chrono::system_clock::now()) const;
+        GrowBox light(LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const;
+        GrowBox put(Plant plant, GrowBox box) const;
+        GrowBox removePlant(Plant plant, GrowBox box) const;
+        std::optional<GrowBox> update(std::chrono::system_clock::time_point time, GrowBox box) const;
+        GrowBox shutdown(std::chrono::system_clock::time_point time, GrowBox box) const;
     };
 }
 
