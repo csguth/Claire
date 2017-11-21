@@ -23,8 +23,8 @@ namespace claire
     struct Event
     {
         using EventMapType = std::map<std::chrono::system_clock::time_point, std::tuple<ValueType, std::chrono::seconds>>;
-        EventMapType events;
         ValueType now;
+        EventMapType events;
         Event update(std::chrono::system_clock::time_point time) const
         {
             using namespace std::chrono_literals;

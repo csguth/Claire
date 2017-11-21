@@ -17,29 +17,9 @@ namespace claire {
     {
         return light_.now;
     }
-    
-    GrowBox GrowBox::light(LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat) const
-    {
-        auto now = std::chrono::system_clock::now();
-        GrowBox box{*this};
-        box.light_.events[std::move(time)] = std::make_tuple(state, repeat);
-        if (time <= now)
-        {
-            box.light_ = std::move(box.light_).update(std::move(now));
-        }
-        return box;
-    }
-    
     std::vector<Plant> GrowBox::plants() const
     {
         return plants_;
-    }
-    
-    GrowBox GrowBox::removePlant(Plant plant) const
-    {
-        GrowBox box(*this);
-        box.plants_.erase(std::remove(box.plants_.begin(), box.plants_.end(), std::move(plant)), box.plants_.end());
-        return box;
     }
     Plant GrowBox::plant(std::string name) const
     {
@@ -47,53 +27,11 @@ namespace claire {
             return p.name() == name;
         });
     }
-    std::optional<GrowBox> GrowBox::update(std::chrono::system_clock::time_point time) const
-    {
-        if (shutdownTime_)
-        {
-            if (*shutdownTime_ < std::move(time))
-            {
-                return std::nullopt;
-            }
-        }
-        GrowBox box{*this};
-        box.updatedAt_ = time;
-        
-        auto sensors = box.sensors_;
-        
-        for (auto& sensor: sensors)
-        {
-            
-            sensor.second = sensor.second.update(time);
-        
-            if (sensor.second.now.serial && sensor.second.now.property == PlantProperty::Moisture)
-            {
-                auto value = sensor.second.now.serial->readNext();
-                auto plant = box.plant(sensor.first.name()).moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max());
-                box = std::move(box).put(std::move(plant));
-//                sensor.second.now.serial.reset();
-            }
-        }
-        
-        box.light_ = std::move(box.light_).update(time);
-        return box;
-    }
-    GrowBox GrowBox::shutdown(std::chrono::system_clock::time_point time) const
-    {
-        GrowBox box{*this};
-        box.shutdownTime_ = std::move(time);
-        return box;
-    }
     Light::EventMapType GrowBox::lightEvents() const
     {
         return light_.events;
     }
-    GrowBox GrowBox::put(Plant plant) const
-    {
-        auto result = removePlant(plant);
-        result.plants_.push_back(std::move(plant));
-        return result;
-    }
+
 
 
     std::ostream& operator<<(std::ostream& out, GrowBox box)
@@ -128,6 +66,65 @@ namespace claire {
         }
         boost::property_tree::write_json(out, root);
         return out;
+    }
+    
+    GrowBox Claire::light(GrowBox box, LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat) const
+    {
+        auto now = std::chrono::system_clock::now();
+        box.light_.events[std::move(time)] = std::make_tuple(state, repeat);
+        if (time <= now)
+        {
+            box.light_ = std::move(box.light_).update(std::move(now));
+        }
+        return box;
+    }
+    
+    GrowBox Claire::removePlant(GrowBox box, Plant plant) const
+    {
+        box.plants_.erase(std::remove(box.plants_.begin(), box.plants_.end(), std::move(plant)), box.plants_.end());
+        return box;
+    }
+    std::optional<GrowBox> Claire::update(GrowBox box, std::chrono::system_clock::time_point time) const
+    {
+        if (box.shutdownTime_)
+        {
+            if (*box.shutdownTime_ < std::move(time))
+            {
+                return std::nullopt;
+            }
+        }
+        box.updatedAt_ = time;
+        
+        auto sensors = box.sensors_;
+        
+        for (auto& sensor: sensors)
+        {
+            
+            sensor.second = sensor.second.update(time);
+            
+            if (sensor.second.now.serial && sensor.second.now.property == PlantProperty::Moisture)
+            {
+                auto value = sensor.second.now.serial->readNext();
+                auto plant = box.plant(sensor.first.name()).moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max());
+                box = put(std::move(box), std::move(plant));
+                //                sensor.second.now.serial.reset();
+            }
+        }
+        
+        box.light_ = std::move(box.light_).update(time);
+        return box;
+    }
+    GrowBox Claire::put(GrowBox box, Plant plant) const
+    {
+        auto result = removePlant(std::move(box), plant);
+        result.plants_.push_back(std::move(plant));
+        return result;
+    }
+    
+    GrowBox Claire::shutdown(GrowBox box, std::chrono::system_clock::time_point time) const
+    {
+        box.shutdownTime_ = std::move(time);
+        return box;
     }
     
 }
