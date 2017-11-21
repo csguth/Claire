@@ -127,4 +127,16 @@ namespace claire {
         return box;
     }
     
+    GrowBox Claire::sensor(std::shared_ptr<SerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const
+    
+    {
+        auto now = std::chrono::system_clock::now();
+        box.sensors_[plant].events[std::move(time)] = std::make_tuple(SensorEvent{std::move(property), std::move(serial)}, std::move(repeat));
+        if (time <= now)
+        {
+            box.sensors_.at(plant) = std::move(box.sensors_.at(plant)).update(std::move(now));
+        }
+        return box;
+    }
+    
 }

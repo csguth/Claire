@@ -27,9 +27,8 @@ TEST_CASE_METHOD(LightsTest, "Check light state")
 
 TEST_CASE_METHOD(LightsTest, "Set light state")
 {
-    claire::Claire claire;
-    claire::GrowBox box;
-    claire::GrowBox box2 = claire.light(On, system_clock::now(), 0h, box);
+    const claire::GrowBox box;
+    claire::GrowBox box2 = claire::Claire{}.light(On, system_clock::now(), 0h, box);
     INFO("Immutable");
     REQUIRE(box.light() == Off);
     REQUIRE(box2.light() == On);
@@ -172,40 +171,39 @@ TEST_CASE_METHOD(RemovePlantTest, "Remove plant")
 #include <thread>
 #include <boost/asio.hpp>
 
-//TEST_CASE("application loop", "[grey]")
-//{
-//    using std::chrono::system_clock;
-//    using namespace claire;
-//    auto now = system_clock::now();
-//
-//    boost::asio::io_service io;
-//    auto initialState = Claire{}.put(Plant{"skunk__1"},
-//                                     Claire{}.light(LightState::Off, now + 18s, 24s,
-//                                                    Claire{}.light(LightState::On, now, 24s,
-//                                                                   Claire{}.shutdown(now + 48s, GrowBox{}))));
-//
-////
-////                                          .put(Plant{"skunk__1"})
-////                                          .sensor<Integer<0, 1023>>(SerialPort::create(io, "__dummy"), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s);
-////    while ((box = std::move(*box).update(system_clock::now())))
-////    {
-////        io.run_one();
-////        std::clog << *box << std::endl;
-////        std::this_thread::sleep_for(1s);
-////    }
-//}
-//
-//TEST_CASE("sensor test", "[sensor]")
-//{
-//    using namespace claire;
-//    using std::chrono::system_clock;
-//    boost::asio::io_service io;
-//    auto now = system_clock::now();
-//    auto box = Claire{}.put(Plant{"skunk#1"}, GrowBox{});
-////                        .sensor<Integer<0, 1023>>(SerialPort::create(io, "__dummy"), Plant{"skunk#1"}, PlantProperty::Moisture, now + 1s, 5min);
-//    auto box_after = Claire{}.update(now + 1s, box);
-//    io.run();
-//    REQUIRE(Approx(box.plant("skunk#1").moisture()) == 0.0);
-//    REQUIRE(Approx(box_after->plant("skunk#1").moisture()) == (666.0/1023.0));
-//}
+TEST_CASE("application loop", "[grey]")
+{
+    using std::chrono::system_clock;
+    using namespace claire;
+    auto now = system_clock::now();
+
+    boost::asio::io_service io;
+    auto initialState = Claire{}.sensor(SerialPort::create(io, "__dummy"), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s,
+                                        Claire{}.put(Plant{"skunk__1"},
+                                                     Claire{}.light(LightState::Off, now + 18s, 24s,
+                                                                    Claire{}.light(LightState::On, now, 24s,
+                                                                                   Claire{}.shutdown(now + 48s, GrowBox{})))));
+    std::optional<GrowBox> box{initialState};
+    while ((box = Claire{}.update(system_clock::now(), *box)))
+    {
+        io.run_one();
+        std::clog << *box << std::endl;
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+TEST_CASE("sensor test", "[sensor]")
+{
+    using namespace claire;
+    using std::chrono::system_clock;
+    boost::asio::io_service io;
+    auto now = system_clock::now();
+    auto box = Claire{}.sensor(SerialPort::create(io, "__dummy"), Plant{"skunk#1"}, PlantProperty::Moisture, now + 1s, 5min,
+                               Claire{}.put(Plant{"skunk#1"},
+                                            GrowBox{}));
+    auto box_after = Claire{}.update(now + 1s, box);
+    io.run();
+    REQUIRE(Approx(box.plant("skunk#1").moisture()) == 0.0);
+    REQUIRE(Approx(box_after->plant("skunk#1").moisture()) == (666.0/1023.0));
+}
 

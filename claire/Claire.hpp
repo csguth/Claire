@@ -41,18 +41,6 @@ namespace claire {
 
         friend std::ostream& operator<<(std::ostream& out, GrowBox box);
         
-        template <class ValueType>
-        GrowBox sensor(std::shared_ptr<SerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat = std::chrono::seconds{0}) const
-        {
-            auto now = std::chrono::system_clock::now();
-            GrowBox box{*this};
-            box.sensors_[plant].events[std::move(time)] = std::make_tuple(SensorEvent{std::move(property), std::move(serial)}, std::move(repeat));
-            if (time <= now)
-            {
-                box.sensors_.at(plant) = std::move(box.sensors_.at(plant)).update(std::move(now));
-            }
-            return box;
-        }
     private:
         std::vector<Plant> plants_;
         std::chrono::system_clock::time_point updatedAt_;
@@ -70,6 +58,7 @@ namespace claire {
         GrowBox removePlant(Plant plant, GrowBox box) const;
         std::optional<GrowBox> update(std::chrono::system_clock::time_point time, GrowBox box) const;
         GrowBox shutdown(std::chrono::system_clock::time_point time, GrowBox box) const;
+        GrowBox sensor(std::shared_ptr<SerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const;
     };
 }
 
