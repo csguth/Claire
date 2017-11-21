@@ -177,9 +177,9 @@ TEST_CASE("application loop", "[grey]")
     boost::asio::io_service io;
     auto initialState = Claire{}.sensor(SerialPort::create(io, "__dummy"), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s,
                                         Claire{}.put(Plant{"skunk__1"},
-                                                     Claire{}.light(LightState::Off, now + 18s, 24s,
-                                                                    Claire{}.light(LightState::On, now, 24s,
-                                                                                   Claire{}.shutdown(now + 48s, GrowBox{})))));
+                                                     Claire{}.photoperiod(18s, 24s, LightState::On,
+                                                                          Claire{}.shutdown(now + 48s,
+                                                                                            GrowBox{}))));
     std::optional<GrowBox> box{initialState};
     while ((box = Claire{}.update(system_clock::now(), *box)))
     {
@@ -205,7 +205,7 @@ TEST_CASE("sensor test", "[sensor]")
 TEST_CASE("photoperiod", "[photoperiod]")
 {
     auto now = system_clock::now();
-    auto firstDay = Claire{}.photoperiod(16h, LightState::On, GrowBox{});
+    auto firstDay = Claire{}.photoperiod(16h, 24h, LightState::On, GrowBox{});
     auto firstNight = Claire{}.update(now + 1h + 16h, firstDay);
     auto secondDay = Claire{}.update(now + 1h + 24h, firstDay);
     auto secondNight = Claire{}.update(now + 1h + 16h + 24h, firstDay);
