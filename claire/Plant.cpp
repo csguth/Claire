@@ -30,12 +30,6 @@ namespace claire
     {
         return moisture_;
     }
-    Plant Plant::moisture(double value) const
-    {
-        Plant plant{*this};
-        plant.moisture_ = std::move(value);
-        return plant;
-    }
     Plant::operator std::string() const
     {
         return "\"Plant\" name=\""+name()+"\" moisture=\"" + std::to_string(moisture())  + "\"";

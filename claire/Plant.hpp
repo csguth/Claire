@@ -19,8 +19,10 @@ namespace claire
         Moisture
     };
     
+    class GrowBox;
     struct Plant
     {
+        friend GrowBox;
         Plant() = default;
         Plant(Plant&&) = default;
         Plant(const Plant&) = default;
@@ -32,7 +34,6 @@ namespace claire
         bool operator<(const Plant&) const;
         operator std::string() const;
         double moisture() const;
-        Plant moisture(double value) const;
         friend std::ostream& operator<<(std::ostream& out, const Plant& p);
         
     private:

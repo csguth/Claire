@@ -31,8 +31,11 @@ namespace claire {
     {
         return light_.events;
     }
-
-
+    Plant GrowBox::moisture(double value, Plant plant) const
+    {
+        plant.moisture_ = value;
+        return plant;
+    }
 
     std::ostream& operator<<(std::ostream& out, GrowBox box)
     {
@@ -105,7 +108,7 @@ namespace claire {
             if (sensor.second.now.serial && sensor.second.now.property == PlantProperty::Moisture)
             {
                 auto value = sensor.second.now.serial->readNext();
-                auto plant = box.plant(sensor.first.name()).moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max());
+                auto plant = box.moisture(static_cast<double>(sensor.second.now.serial->readNext().get())/value.max(), box.plant(sensor.first.name()));
                 box = put(std::move(plant), std::move(box));
                 //                sensor.second.now.serial.reset();
             }

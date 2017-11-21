@@ -143,7 +143,7 @@ TEST_CASE_METHOD(AddPlantTest, "Moisture")
 {
     addPlant();
     REQUIRE(Approx(plant.moisture()) == 0.0);
-    auto plantAfter = plant.moisture(1.12345);
+    auto plantAfter = claire::GrowBox{}.moisture(1.12345, plant);
     REQUIRE(Approx(plant.moisture()) == 0.0);
     REQUIRE(Approx(plantAfter.moisture()) == 1.12345);
 }
@@ -206,4 +206,3 @@ TEST_CASE("sensor test", "[sensor]")
     REQUIRE(Approx(box.plant("skunk#1").moisture()) == 0.0);
     REQUIRE(Approx(box_after->plant("skunk#1").moisture()) == (666.0/1023.0));
 }
-

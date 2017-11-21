@@ -24,7 +24,7 @@ namespace std {
 namespace claire {
     
     class Claire;
-    struct GrowBox
+    class GrowBox
     {
     public:
         friend Claire;
@@ -38,6 +38,7 @@ namespace claire {
         std::vector<Plant> plants() const;
         Light::EventMapType lightEvents() const;
         Plant plant(std::string name) const;
+        Plant moisture(double value, Plant plant) const;
 
         friend std::ostream& operator<<(std::ostream& out, GrowBox box);
         
