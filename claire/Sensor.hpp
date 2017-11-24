@@ -8,10 +8,11 @@
 #ifndef Sensor_hpp
 #define Sensor_hpp
 
-#include <memory>
-#include <Integer.hpp>
-#include <Plant.hpp>
 #include <boost/asio.hpp>
+#include <EventBase.hpp>
+#include <Integer.hpp>
+#include <memory>
+#include <Plant.hpp>
 
 namespace claire
 {
@@ -23,24 +24,17 @@ namespace claire
     private:
     };
     
-    class SerialPort: public SensorInput
+    class DummySerialPort: public SensorInput
     {
     public:
-        static std::unique_ptr<SerialPort> create(boost::asio::io_service& io, std::string path);
+        static std::unique_ptr<DummySerialPort> create();
         Integer<0, 1023> readNext() const override;
-    private:
-        SerialPort() = default;
-        SerialPort(SerialPort&&) = default;
-        SerialPort& operator=(SerialPort&&) = default;
-        explicit SerialPort(boost::asio::io_service& io, std::string path);
-        
-        boost::asio::serial_port port_;
     };
     
-    struct SensorEvent
+    struct SensorEvent: EventBase<std::shared_ptr<SensorInput>, SensorEvent>
     {
-        PlantProperty property;
-        std::shared_ptr<SensorInput> serial;
+        using EventBase<std::shared_ptr<SensorInput>, SensorEvent>::operator=;
+
     };
 }
 

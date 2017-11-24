@@ -8,7 +8,7 @@
 #ifndef Claire_hpp
 #define Claire_hpp
 
-#include <Light.hpp>
+#include <LightEvent.hpp>
 #include <Plant.hpp>
 #include <Integer.hpp>
 #include <Sensor.hpp>
@@ -28,7 +28,7 @@ namespace claire {
     {
     public:
         friend Claire;
-        explicit GrowBox() = default;
+        GrowBox() = default;
         GrowBox(GrowBox&&) = default;
         GrowBox(const GrowBox&) = default;
         GrowBox& operator=(GrowBox&&) = default;
@@ -36,32 +36,27 @@ namespace claire {
         
         LightState light() const;
         std::vector<Plant> plants() const;
-        Light::EventMapType lightEvents() const;
+        LightEvent::EventMapType lightEvents() const;
         Plant plant(std::string name) const;
         Plant moisture(double value, Plant plant) const;
 
         friend std::ostream& operator<<(std::ostream& out, GrowBox box);
         
-    private:
         std::vector<Plant> plants_;
         std::chrono::system_clock::time_point updatedAt_;
         std::optional<std::chrono::system_clock::time_point> shutdownTime_;
-        Light light_{LightState::Off};
-        std::map<Plant, Event<SensorEvent>> sensors_;
+        LightEvent light_;
+        std::map<std::pair<Plant, PlantProperty>, SensorEvent> sensors_;
         
     };
     
-    class Claire
-    {
-    public:
-        GrowBox light(LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const;
-        GrowBox put(Plant plant, GrowBox box) const;
-        GrowBox removePlant(Plant plant, GrowBox box) const;
-        std::optional<GrowBox> update(std::chrono::system_clock::time_point time, GrowBox box) const;
-        GrowBox shutdown(std::chrono::system_clock::time_point time, GrowBox box) const;
-        GrowBox sensor(std::shared_ptr<SerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box) const;
-        GrowBox photoperiod(std::chrono::seconds lightTime, std::chrono::seconds dayDuration, LightState initialState, GrowBox box) const;
-    };
+    GrowBox light(LightState state, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box);
+    GrowBox put(Plant plant, GrowBox box);
+    GrowBox removePlant(Plant plant, GrowBox box);
+    std::optional<GrowBox> update(std::chrono::system_clock::time_point time, GrowBox box);
+    GrowBox shutdown(std::chrono::system_clock::time_point time, GrowBox box);
+    GrowBox sensor(std::shared_ptr<DummySerialPort> serial, Plant plant, PlantProperty property, std::chrono::system_clock::time_point time, std::chrono::seconds repeat, GrowBox box);
+    GrowBox photoperiod(std::chrono::seconds lightTime, std::chrono::seconds dayDuration, LightState initialState, GrowBox box);
 }
 
 #endif /* Claire_hpp */

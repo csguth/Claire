@@ -1,35 +1,29 @@
 //
-//  LightsControl.hpp
+//  EventBase.hpp
 //  claire
 //
-//  Created by Chrystian Guth on 11/11/17.
+//  Created by Chrystian Guth on 23/11/17.
 //
 
-#ifndef Light_hpp
-#define Light_hpp
+#ifndef EventBase_hpp
+#define EventBase_hpp
 
 #include <chrono>
 #include <map>
 
 namespace claire
 {
-    
-    enum class LightState
-    {
-        On, Off
-    };
-    
-    template <class ValueType>
-    struct Event
+    template <class ValueType, class EventType>
+    struct EventBase
     {
         using EventMapType = std::map<std::chrono::system_clock::time_point, std::tuple<ValueType, std::chrono::seconds>>;
         ValueType now;
         EventMapType events;
-        Event update(std::chrono::system_clock::time_point time) const
+        EventBase update(std::chrono::system_clock::time_point time) const
         {
             using namespace std::chrono_literals;
-
-            Event light{*this};
+            
+            EventBase light{*this};
             bool unrolling{true};
             while (unrolling)
             {
@@ -63,9 +57,6 @@ namespace claire
             return light;
         }
     };
-    
-    using Light = Event<LightState>;
-    
 }
 
-#endif /* Light_hpp */
+#endif /* EventBase_hpp */

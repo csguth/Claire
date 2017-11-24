@@ -27,8 +27,8 @@ TEST_CASE_METHOD(LightsTest, "Check light state")
 
 TEST_CASE_METHOD(LightsTest, "Set light state")
 {
-    const GrowBox box;
-    GrowBox box2 = Claire{}.light(On, system_clock::now(), 0h, box);
+    GrowBox box;
+    GrowBox box2 = light(On, system_clock::now(), 0h, box);
     INFO("Immutable");
     REQUIRE(box.light() == Off);
     REQUIRE(box2.light() == On);
@@ -37,11 +37,11 @@ TEST_CASE_METHOD(LightsTest, "Set light state")
 TEST_CASE_METHOD(LightsTest, "Schedule repeating event")
 {
     auto now = system_clock::now();
-    auto box = Claire{}.light(On, now + 1h, 1h, GrowBox{});
+    auto box = light(On, now + 1h, 1h, GrowBox{});
     REQUIRE(box.light() == Off);
     REQUIRE_NOTHROW(std::get<0>(box.lightEvents().at(now + 1h)) == On);
     REQUIRE_NOTHROW(std::get<1>(box.lightEvents().at(now + 1h)) == 1h);
-    auto box2 = Claire{}.update(now + 1h, box);
+    auto box2 = update(now + 1h, box);
     REQUIRE_NOTHROW(std::get<0>(box2->lightEvents().at(now + 2h)) == On);
     REQUIRE_NOTHROW(std::get<1>(box2->lightEvents().at(now + 2h)) == 1h);
     
@@ -51,23 +51,23 @@ TEST_CASE_METHOD(LightsTest, "Schedule repeating event")
 TEST_CASE_METHOD(LightsTest, "Schedule lights event")
 {
     auto now = std::chrono::system_clock::now();
-    auto box = Claire{}.light(On, now + 100*24h, 0h,
-                                      Claire{}.light(Off, now + 200*24h, 0h,
-                                                             GrowBox{}));
+    auto box = light(On, now + 100*24h, 0h,
+                     light(Off, now + 200*24h, 0h,
+                           GrowBox{}));
     REQUIRE(box.light() == Off);
-    auto box2 = Claire{}.update(now + 50*24h, box);
+    auto box2 = update(now + 50*24h, box);
     REQUIRE(box2->light() == Off);
     REQUIRE(box2->lightEvents().size() == 2);
-    auto box3 = Claire{}.update(now + 99*24h, box);
+    auto box3 = update(now + 99*24h, box);
     REQUIRE(box3->light() == Off);
     REQUIRE(box3->lightEvents().size() == 2);
-    auto box4 = Claire{}.update(now + 100*24h, box);
+    auto box4 = update(now + 100*24h, box);
     REQUIRE(box4->light() == On);
     REQUIRE(box4->lightEvents().size() == 1);
-    auto box5 = Claire{}.update(now + 101*24h, box);
+    auto box5 = update(now + 101*24h, box);
     REQUIRE(box5->light() == On);
     REQUIRE(box5->lightEvents().size() == 1);
-    auto box6 = Claire{}.update(now + 200*24h, box);
+    auto box6 = update(now + 200*24h, box);
     REQUIRE(box6->light() == Off);
     REQUIRE(box6->lightEvents().empty());
 }
@@ -75,21 +75,21 @@ TEST_CASE_METHOD(LightsTest, "Schedule lights event")
 TEST_CASE_METHOD(LightsTest, "Photoperiod")
 {
     auto now = std::chrono::system_clock::now();
-    auto box = Claire{}.light(On, now, 24h,
-                                      Claire{}.light(Off, now + 16h, 24h,
-                                                             GrowBox{}));
+    auto box = light(On, now, 24h,
+                     light(Off, now + 16h, 24h,
+                           GrowBox{}));
     REQUIRE(box.light() == On);
     REQUIRE(box.lightEvents().size() == 2);
-    auto box2 = Claire{}.update(now + 15h, box);
+    auto box2 = update(now + 15h, box);
     REQUIRE(box2->light() == On);
     REQUIRE(box2->lightEvents().size() == 2);
-    auto box3 = Claire{}.update(now + 16h, box);
+    auto box3 = update(now + 16h, box);
     REQUIRE(box3->light() == Off);
     REQUIRE(box3->lightEvents().size() == 2);
-    auto box4 = Claire{}.update(now + 23h + 59min + 59s, box);
+    auto box4 = update(now + 23h + 59min + 59s, box);
     REQUIRE(box4->light() == Off);
     REQUIRE(box4->lightEvents().size() == 2);
-    auto box5 = Claire{}.update(now + 24h, box);
+    auto box5 = update(now + 24h, box);
     REQUIRE(box5->light() == On);
     REQUIRE(box5->lightEvents().size() == 2);
 }
@@ -101,7 +101,7 @@ struct AddPlantTest
     
     void addPlant()
     {
-        boxAfter = Claire{}.put(plant, GrowBox{});
+        boxAfter = put(plant, GrowBox{});
         INFO("Added plant " << plant);
     }
     
@@ -157,7 +157,7 @@ struct RemovePlantTest: AddPlantTest
     
     void removePlant()
     {
-        boxAfter = Claire{}.removePlant(plant, std::move(boxAfter));
+        boxAfter = claire::removePlant(plant, std::move(boxAfter));
     }
 };
 
@@ -175,13 +175,13 @@ TEST_CASE("application loop", "[grey]")
 {
     auto now = system_clock::now();
     boost::asio::io_service io;
-    auto initialState = Claire{}.sensor(SerialPort::create(io, "__dummy"), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s,
-                                        Claire{}.put(Plant{"skunk__1"},
-                                                     Claire{}.photoperiod(18s, 24s, LightState::On,
-                                                                          Claire{}.shutdown(now + 48s,
-                                                                                            GrowBox{}))));
+    auto initialState = sensor(DummySerialPort::create(), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s,
+                               put(Plant{"skunk__1"},
+                                   photoperiod(18s, 24s, LightState::On,
+                                               shutdown(now + 48s,
+                                                        GrowBox{}))));
     std::optional<GrowBox> box{initialState};
-    while ((box = Claire{}.update(system_clock::now(), *box)))
+    while ((box = update(system_clock::now(), *box)))
     {
         io.run_one();
         std::clog << *box << std::endl;
@@ -193,10 +193,10 @@ TEST_CASE("sensor test", "[sensor]")
 {
     boost::asio::io_service io;
     auto now = system_clock::now();
-    auto box = Claire{}.sensor(SerialPort::create(io, "__dummy"), Plant{"skunk#1"}, PlantProperty::Moisture, now + 1s, 5min,
-                               Claire{}.put(Plant{"skunk#1"},
-                                            GrowBox{}));
-    auto box_after = Claire{}.update(now + 1s, box);
+    auto box = sensor(DummySerialPort::create(), Plant{"skunk#1"}, PlantProperty::Moisture, now + 1s, 5min,
+                      put(Plant{"skunk#1"},
+                          GrowBox{}));
+    auto box_after = update(now + 1s, box);
     io.run();
     REQUIRE(Approx(box.plant("skunk#1").moisture()) == 0.0);
     REQUIRE(Approx(box_after->plant("skunk#1").moisture()) == (666.0/1023.0));
@@ -205,10 +205,10 @@ TEST_CASE("sensor test", "[sensor]")
 TEST_CASE("photoperiod", "[photoperiod]")
 {
     auto now = system_clock::now();
-    auto firstDay = Claire{}.photoperiod(16h, 24h, LightState::On, GrowBox{});
-    auto firstNight = Claire{}.update(now + 1h + 16h, firstDay);
-    auto secondDay = Claire{}.update(now + 1h + 24h, firstDay);
-    auto secondNight = Claire{}.update(now + 1h + 16h + 24h, firstDay);
+    auto firstDay = photoperiod(16h, 24h, LightState::On, GrowBox{});
+    auto firstNight = update(now + 1h + 16h, firstDay);
+    auto secondDay = update(now + 1h + 24h, firstDay);
+    auto secondNight = update(now + 1h + 16h + 24h, firstDay);
     REQUIRE(firstDay.light() == LightState::On);
     REQUIRE(firstNight->light() == LightState::Off);
     REQUIRE(secondDay->light() == LightState::On);
