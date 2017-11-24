@@ -169,12 +169,10 @@ TEST_CASE_METHOD(RemovePlantTest, "Remove plant")
 }
 
 #include <thread>
-#include <boost/asio.hpp>
 
 TEST_CASE("application loop", "[grey]")
 {
     auto now = system_clock::now();
-    boost::asio::io_service io;
     auto initialState = sensor(DummySerialPort::create(), Plant{"skunk__1"}, PlantProperty::Moisture, now, 2s,
                                put(Plant{"skunk__1"},
                                    photoperiod(18s, 24s, LightState::On,
@@ -183,7 +181,6 @@ TEST_CASE("application loop", "[grey]")
     std::optional<GrowBox> box{initialState};
     while ((box = update(system_clock::now(), *box)))
     {
-        io.run_one();
         std::clog << *box << std::endl;
         std::this_thread::sleep_for(1s);
     }
@@ -191,13 +188,11 @@ TEST_CASE("application loop", "[grey]")
 
 TEST_CASE("sensor test", "[sensor]")
 {
-    boost::asio::io_service io;
     auto now = system_clock::now();
     auto box = sensor(DummySerialPort::create(), Plant{"skunk#1"}, PlantProperty::Moisture, now + 1s, 5min,
                       put(Plant{"skunk#1"},
                           GrowBox{}));
     auto box_after = update(now + 1s, box);
-    io.run();
     REQUIRE(Approx(box.plant("skunk#1").moisture()) == 0.0);
     REQUIRE(Approx(box_after->plant("skunk#1").moisture()) == (666.0/1023.0));
 }
